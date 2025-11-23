@@ -55,6 +55,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	Vector2 world = { 0,0 };
 
+	/////
+	const int screenWidth = 1280;
+	const int screenHeight = 720;
+	const int scrollMarginX = 400; // 画面端からスクロール開始する距離
+	const int scrollMarginY = 300;
+
 	//player
 	struct Player {
 		Vector2 pos;
@@ -241,46 +247,63 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		}
 
-	//マップ当たり判定
-		if (player.pos.x < map.topLeft.x) {
-			player.pos.x = map.topLeft.x;
+	////マップ当たり判定
+	//	if (player.pos.x < map.topLeft.x) {
+	//		player.pos.x = map.topLeft.x;
+	//	}
+	//	if (player.pos.x > map.topRight.x - player.width) {
+	//		player.pos.x = map.topRight.x - player.width;
+	//	}
+	//	if (player.pos.y < map.topLeft.y) {
+	//		player.pos.y = map.topLeft.y;
+	//	}
+	//	if (player.pos.y > map.bottomLeft.y - player.height) {
+	//		player.pos.y = map.bottomLeft.y - player.height;
+	//	}
+	//	//当たり判定のデバッグ
+	//	if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_RIGHT)) {
+	//		map.topLeft.x += 5;
+	//		map.bottomLeft.x += 5;
+	//	}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_LEFT)) {
+	//		map.topLeft.x -= 5;
+	//		map.bottomLeft.x -= 5;
+	//	}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_UP)) {
+	//		map.topLeft.y -= 5;
+	//		map.topRight.y -= 5;
+	//	}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_DOWN)) {
+	//		map.topLeft.y += 5;
+	//		map.topRight.y += 5;
+	//	}
+
+	//	if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_RIGHT)) {
+	//		map.topRight.x += 5;
+	//		map.bottomRight.x += 5;
+	//	}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_LEFT)) {
+	//		map.topRight.x -= 5;
+	//		map.bottomRight.x -= 5;
+	//	}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_UP)) {
+	//		map.bottomLeft.y -= 5;
+	//		map.bottomRight.y -= 5;
+	//	}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_DOWN)) {
+	//		map.bottomLeft.y += 5;
+	//		map.bottomRight.y += 5;
+	//	}
+
+
+		// 横スクロール
+		if (player.pos.x - world.x < scrollMarginX) {
+			world.x = player.pos.x - scrollMarginX;
 		}
-		if (player.pos.x > map.topRight.x - player.width) {
-			player.pos.x = map.topRight.x - player.width;
-		}
-		if (player.pos.y < map.topLeft.y) {
-			player.pos.y = map.topLeft.y;
-		}
-		if (player.pos.y > map.bottomLeft.y - player.height) {
-			player.pos.y = map.bottomLeft.y - player.height;
-		}
-		//当たり判定のデバッグ
-		if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_RIGHT)) {
-			map.topLeft.x += 5;
-			map.bottomLeft.x += 5;
-		}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_LEFT)) {
-			map.topLeft.x -= 5;
-			map.bottomLeft.x -= 5;
-		}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_UP)) {
-			map.topLeft.y -= 5;
-			map.topRight.y -= 5;
-		}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_DOWN)) {
-			map.topLeft.y += 5;
-			map.topRight.y += 5;
+		else if (player.pos.x - world.x > screenWidth - scrollMarginX) {
+			world.x = player.pos.x - (screenWidth - scrollMarginX);
 		}
 
-		if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_RIGHT)) {
-			map.topRight.x += 5;
-			map.bottomRight.x += 5;
-		}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_LEFT)) {
-			map.topRight.x -= 5;
-			map.bottomRight.x -= 5;
-		}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_UP)) {
-			map.bottomLeft.y -= 5;
-			map.bottomRight.y -= 5;
-		}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_DOWN)) {
-			map.bottomLeft.y += 5;
-			map.bottomRight.y += 5;
+		// 縦スクロール
+		if (player.pos.y - world.y < scrollMarginY) {
+			world.y = player.pos.y - scrollMarginY;
+		}
+		else if (player.pos.y - world.y > screenHeight - scrollMarginY) {
+			world.y = player.pos.y - (screenHeight - scrollMarginY);
 		}
 
 		/*if (keys[DIK_W]) player.pos.y -= player.speed;
@@ -612,26 +635,38 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		///
 
 		ImGui::Begin("MAP");
-		ImGui::SliderFloat("world map x", &world.x, -1280.0f, 1280.0f);
-		ImGui::SliderFloat("world map y", &world.y, -720.0f, 720.0f);
+		ImGui::SliderFloat("world map x", &world.x, -kWindowWidth, kWindowWidth);
+		ImGui::SliderFloat("world map y", &world.y, -kWindowHeight, kWindowHeight);
 		ImGui::End();
 
 		for (int i = -1; i < 2; i++) {
 			for (int k = -1; k < 2; k++) {
-				Novice::DrawSprite(-(int)world.x + 1280 * k, (int)world.y + 720 * i, sprite[0], 1, 1, 0.0f, WHITE);
+				Novice::DrawSprite(-(int)world.x + kWindowWidth * k, -(int)world.y + kWindowHeight * i, sprite[0], 1, 1, 0.0f, WHITE);
 			}
 		}
 
 		//オブジェクト
 		for (int i = 0; i < 15; i++) {
-			Novice::DrawQuad((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y + (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y + (int)world.y, 0, 0, 81, 128, sprite[1], WHITE);
+			Novice::DrawQuad(
+				(int)map.objectTopLeft[i].x - (int)world.x,
+				(int)map.objectTopLeft[i].y - (int)world.y,
+				(int)map.objectTopRight[i].x - (int)world.x,
+				(int)map.objectTopRight[i].y - (int)world.y,
+				(int)map.objectBottomLeft[i].x - (int)world.x,
+				(int)map.objectBottomLeft[i].y - (int)world.y,
+				(int)map.objectBottomRight[i].x - (int)world.x,
+				(int)map.objectBottomRight[i].y - (int)world.y,
+				0, 0, 81, 128,
+				sprite[1],
+				WHITE
+			);
 		}
 
 		Novice::DrawBox(
-			int(player.pos.x - (int)world.x),
-			int(player.pos.y + (int)world.y),
-			int(player.width),
-			int(player.height),
+			(int)(player.pos.x - world.x),
+			(int)(player.pos.y - world.y),
+			(int)player.width,
+			(int)player.height,
 			0.0f,
 			0xFFFFFFFF,
 			kFillModeSolid
@@ -639,56 +674,40 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		//aim line
 
-		Novice::DrawLine((int)player.pos.x -(int)world.x + (int)player.width / 2, (int)player.pos.y + (int)world.y + (int)player.height / 2, mouseX, mouseY, WHITE);
+		Novice::DrawLine((int)player.pos.x -(int)world.x + (int)player.width / 2, (int)player.pos.y - (int)world.y + (int)player.height / 2, mouseX, mouseY, WHITE);
 
-			//マップ範囲描画
-			Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y + (int)world.y, (int)map.topRight.x - (int)world.x, (int)map.topRight.y + (int)world.y, RED);
-			Novice::DrawLine((int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y + (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y + (int)world.y, RED);
-			Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y + (int)world.y, (int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y + (int)world.y, RED);
-			Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y + (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y + (int)world.y, RED);
+			////マップ範囲描画
+			//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, RED);
+			//Novice::DrawLine((int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
+			//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, RED);
+			//Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
 
 			//マップオブジェクト当たり判定のデバッグ
 
 			for (int i = 0; i < 15; i++) {
-				Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, GREEN);
-				Novice::DrawLine((int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y + (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y + (int)world.y, GREEN);
-				Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y + (int)world.y, GREEN);
-				Novice::DrawLine((int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y + (int)world.y, GREEN);
+				Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, GREEN);
+				Novice::DrawLine((int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
+				Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, GREEN);
+				Novice::DrawLine((int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
 			}
 
-
-		//Novice::DrawBox(0, 0, kWindowWidth, kWindowHeight, 0.0f, BLACK, kFillModeSolid);
-
-		////player
-		//Novice::DrawBox(
-		//	int(player.pos.x),
-		//	int(player.pos.y),
-		//	int(player.width),
-		//	int(player.height),
-		//	0.0f,
-		//	WHITE,
-		//	kFillModeSolid
-		//);
-
-
-
 		//weapon box
-		Novice::DrawBox((int)rifleBoxPos.x - (int)world.x, (int)rifleBoxPos.y + (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
-		Novice::DrawBox((int)launcherBoxPos.x - (int)world.x, (int)launcherBoxPos.y + (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawBox((int)rifleBoxPos.x - (int)world.x, (int)rifleBoxPos.y - (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
+		Novice::DrawBox((int)launcherBoxPos.x - (int)world.x, (int)launcherBoxPos.y - (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
 		
 
 		//武器を切り替え
 		if (currentWeapon == 0) {
 			for (int i = 0; i < pistolBulletsMax; i++) {
 				if (pistolBullets[i].isActive) {
-					Novice::DrawEllipse((int)pistolBullets[i].pos.x - (int)world.x, (int)pistolBullets[i].pos.y + (int)world.y, 5, 5, 0.0f, BLUE, kFillModeSolid);
+					Novice::DrawEllipse((int)pistolBullets[i].pos.x - (int)world.x, (int)pistolBullets[i].pos.y - (int)world.y, 5, 5, 0.0f, BLUE, kFillModeSolid);
 				}
 			}
 		}
 		else if (currentWeapon == 1) {
 			for (int i = 0; i < riffleBulletsMax; i++) {
 				if (riffleBullets[i].isActive) {
-					Novice::DrawEllipse((int)riffleBullets[i].pos.x - (int)world.x, (int)riffleBullets[i].pos.y + (int)world.y, 5, 5, 0.0f, GREEN, kFillModeSolid);
+					Novice::DrawEllipse((int)riffleBullets[i].pos.x - (int)world.x, (int)riffleBullets[i].pos.y - (int)world.y, 5, 5, 0.0f, GREEN, kFillModeSolid);
 				}
 			}
 		}
@@ -697,7 +716,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				if (launcherBullets[i].isActive) {
 					Novice::DrawEllipse(
 						(int)launcherBullets[i].pos.x - (int)world.x,
-						(int)launcherBullets[i].pos.y + (int)world.y,
+						(int)launcherBullets[i].pos.y - (int)world.y,
 						8, 8, 0.0f, RED, kFillModeSolid
 					);
 				}
@@ -708,14 +727,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::DrawEllipse(mouseX, mouseY, 4, 4, 0.0f, RED, kFillModeSolid);
 
 		//boss
-		Novice::DrawEllipse((int)boss.pos.x - (int)world.x, (int)boss.pos.y + (int)world.y, 50, 50, 0.0f, RED, kFillModeSolid);
+		Novice::DrawEllipse((int)boss.pos.x - (int)world.x, (int)boss.pos.y - (int)world.y, 50, 50, 0.0f, RED, kFillModeSolid);
 
 		// HP表示
 		Novice::DrawBox(900, 50, boss.hp * 2, 20, 0.0f, GREEN, kFillModeSolid);
 
 		for (auto& b : bossBullets) {
 			if (b.isActive) {
-				Novice::DrawEllipse((int)b.pos.x - (int)world.x, (int)b.pos.y + (int)world.y, 5, 5, 0.0f, RED, kFillModeSolid);
+				Novice::DrawEllipse((int)b.pos.x - (int)world.x, (int)b.pos.y - (int)world.y, 5, 5, 0.0f, RED, kFillModeSolid);
 			}
 		}
 
