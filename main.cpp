@@ -80,6 +80,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	};
 
+	map.object[0].x = 340;
+	map.object[0].y = 160;
+
 
 
 
@@ -256,15 +259,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y + (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y + (int)world.y, RED);
 
 		//マップオブジェクト当たり判定のデバッグ
-		map.object[0].x = 340;
-		map.object[0].y = 160;
-		map.object[1].x = 340;
-		map.object[1].y = 560;
-		map.object[2].x = 940;
-		map.object[2].y = 160;
-		map.object[3].x = 940;
-		map.object[3].y = 560;
-
+		
 		for (int i = 0;i < 15;i++) {
 			Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, GREEN);
 			Novice::DrawLine((int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y + (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y + (int)world.y, GREEN);
