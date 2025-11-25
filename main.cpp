@@ -10,6 +10,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// ライブラリの初期化
 	Novice::Initialize(kWindowTitle, 1280, 720);
 
+
 	struct Vector2 {
 		float x;
 		float y;
@@ -17,17 +18,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	struct Map {
 
-		Vector2 topLeft = { 0,0 };
-		Vector2 topRight = { 1280,0 };
-		Vector2 bottomLeft = { 0,720 };
-		Vector2 bottomRight = { 1280,720 };
+		Vector2 topLeft = { -1280,-720 };
+		Vector2 topRight = { 1280 * 2,-720 };
+		Vector2 bottomLeft = { -1280,720 * 2 };
+		Vector2 bottomRight = { 1280 * 2,720 * 2 };
 
 		Vector2 objectTopLeft[15];
 		Vector2 objectTopRight[15];
 		Vector2 objectBottomLeft[15];
 		Vector2 objectBottomRight[15];
+		Vector2 object[15] = { 9999,9999 };
 		int objectWidth[15];
 		int objectHeight[15];
+
+
 
 
 
@@ -37,9 +41,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 	Vector2 world = { 0,0 };
-
-
-
 
 
 
@@ -68,6 +69,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	Map map = {};
 
+
+
+
 	int sprite[10] = {
 
 		Novice::LoadTexture("./sprite/map_background.png"),
@@ -76,23 +80,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	};
 
-	map.objectTopLeft[0].x = 350;
-	map.objectTopLeft[0].y = 350;
-	map.objectTopRight[0].x = 440 + 81;
-	map.objectTopRight[0].y = 350;
-	map.objectBottomLeft[0].x = 350;
-	map.objectBottomLeft[0].y = 440 + 128 * 1.5;
-	map.objectBottomRight[0].x = 440 + 81;
-	map.objectBottomRight[0].y = 440 + 128 * 1.5;
 
-	map.objectTopLeft[1].x = 850;
-	map.objectTopLeft[1].y = 850;
-	map.objectTopRight[1].x = 940 + 81;
-	map.objectTopRight[1].y = 850;
-	map.objectBottomLeft[1].x = 850;
-	map.objectBottomLeft[1].y = 940 + 128 * 1.5;
-	map.objectBottomRight[1].x =940 + 81;
-	map.objectBottomRight[1].y = 940 + 128 * 1.5;
+
+
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -109,9 +99,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		if (keys[DIK_W]) {
 			player.pos.y -= player.speed;
+			
 			for (int o = 0;o < 15;o++) {
-				if (map.objectBottomLeft[o].x < player.pos.x + player.width&& map.objectBottomRight[o].x > player.pos.x) {
-					if (map.objectBottomLeft[o].y - 20 < player.pos.y && map.objectBottomRight[o].y -20 < player.pos.y) {
+				if (map.objectBottomLeft[o].x < player.pos.x + player.width && map.objectBottomRight[o].x > player.pos.x) {
+					if (map.objectBottomLeft[o].y - 20 < player.pos.y && map.objectBottomRight[o].y - 20 < player.pos.y) {
 						if (map.objectBottomLeft[o].y > player.pos.y && map.objectBottomRight[o].y > player.pos.y) {
 							player.pos.y += player.speed;
 						}
@@ -139,7 +130,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			player.pos.x -= player.speed;
 
 			for (int o = 0;o < 15;o++) {
-				if (map.objectTopRight[o].y - player.width /2< player.pos.y && map.objectBottomRight[o].y> player.pos.y) {
+				if (map.objectTopRight[o].y - player.width / 2 < player.pos.y && map.objectBottomRight[o].y > player.pos.y) {
 					if (map.objectTopRight[o].x - 20 < player.pos.x && map.objectBottomRight[o].x - 20 < player.pos.x) {
 						if (map.objectTopRight[o].x > player.pos.x && map.objectBottomRight[o].x > player.pos.x) {
 							player.pos.x += player.speed;
@@ -151,9 +142,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		if (keys[DIK_D]) {
 			player.pos.x += player.speed;
 			for (int o = 0;o < 15;o++) {
-				if (map.objectTopLeft[o].y - player.width / 2 < player.pos.y && map.objectBottomLeft[o].y - player.width / 2 > player.pos.y -player.height /2) {
+				if (map.objectTopLeft[o].y - player.width / 2 < player.pos.y && map.objectBottomLeft[o].y - player.width / 2 > player.pos.y - player.height / 2) {
 					if (map.objectTopLeft[o].x - player.width / 2 + 20 > player.pos.x && map.objectBottomLeft[o].x - player.width / 2 + 20 > player.pos.x) {
-						if (map.objectTopLeft[o].x - player.width < player.pos.x && map.objectBottomLeft[o].x - player.width< player.pos.x) {
+						if (map.objectTopLeft[o].x - player.width < player.pos.x && map.objectBottomLeft[o].x - player.width < player.pos.x) {
 							player.pos.x -= player.speed;
 						}
 					}
@@ -201,6 +192,24 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			map.bottomLeft.y += 5;
 			map.bottomRight.y += 5;
 		}
+
+
+		//オブジェクト の 座標(object position)
+		for (int i = 0;i < 15;i++) {
+
+
+			map.objectTopLeft[i].x = map.object[i].x;
+			map.objectTopLeft[i].y = map.object[i].y;
+			map.objectTopRight[i].x = map.object[i].x + 90 + 81;
+			map.objectTopRight[i].y = map.object[i].y;
+			map.objectBottomLeft[i].x = map.object[i].x;
+			map.objectBottomLeft[i].y = map.object[i].y + 90 + 192;//192(128*1.5)
+			map.objectBottomRight[i].x = map.object[i].x + 90 + 81;
+			map.objectBottomRight[i].y = map.object[i].y + 90 + 192;
+		}
+
+
+
 		ImGui::Begin("MAP");
 		ImGui::SliderFloat("world map x", &world.x, -1280.0f, 1280.0f);
 		ImGui::SliderFloat("world map y", &world.y, -720.0f, 720.0f);
@@ -219,14 +228,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				Novice::DrawSprite(-(int)world.x + 1280 * k, (int)world.y + 720 * i, sprite[0], 1, 1, 0.0f, WHITE);
 			}
 		}
-		
+
 		//オブジェクト
 		for (int i = 0;i < 15;i++) {
 			Novice::DrawQuad((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y + (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y + (int)world.y, 0, 0, 81, 128, sprite[1], WHITE);
 		}
 
 
-		
+
 
 		Novice::DrawBox(
 			int(player.pos.x - (int)world.x),
@@ -247,6 +256,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y + (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y + (int)world.y, RED);
 
 		//マップオブジェクト当たり判定のデバッグ
+		map.object[0].x = 340;
+		map.object[0].y = 160;
+		map.object[1].x = 340;
+		map.object[1].y = 560;
+		map.object[2].x = 940;
+		map.object[2].y = 160;
+		map.object[3].x = 940;
+		map.object[3].y = 560;
 
 		for (int i = 0;i < 15;i++) {
 			Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, GREEN);
@@ -254,8 +271,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y + (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y + (int)world.y, GREEN);
 			Novice::DrawLine((int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y + (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y + (int)world.y, GREEN);
 		}
-		
-		
+
+
 		///
 		/// ↑描画処理ここまで
 		///
