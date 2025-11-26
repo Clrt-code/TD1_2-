@@ -40,9 +40,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	struct Map {
 
 		Vector2 topLeft = { 0,0 };
-		Vector2 topRight = { 1280,0 };
-		Vector2 bottomLeft = { 0,720 };
-		Vector2 bottomRight = { 1280,720 };
+		Vector2 topRight = { kWindowWidth,0 };
+		Vector2 bottomLeft = { 0,kWindowHeight };
+		Vector2 bottomRight = { kWindowWidth,kWindowHeight };
 
 		Vector2 objectTopLeft[15];
 		Vector2 objectTopRight[15];
@@ -56,8 +56,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	Vector2 world = { 0,0 };
 
 	/////
-	const int screenWidth = 1280;
-	const int screenHeight = 720;
+	const int screenWidth = kWindowWidth;
+	const int screenHeight = kWindowHeight;
 	const int scrollMarginX = 400; // 画面端からスクロール開始する距離
 	const int scrollMarginY = 300;
 
