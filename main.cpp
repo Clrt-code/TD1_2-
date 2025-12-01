@@ -72,6 +72,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		int dashDuration;
 		int dashSpeed;
 		bool isDashing;
+		int hp;
+		int invincibilityTimer;
 	};
 	struct PlayerBullet {
 		Vector2 pos;
@@ -135,7 +137,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		.dashDuration = 0,
 		.dashSpeed = 12,
 		.isDashing = false
-
 	};
 
 	Boss boss = { {600.0f, 300.0f}, 100, 1, 0 };
@@ -449,7 +450,24 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		}
 
+		///player当たり判定
+		for (auto& b : bossBullets) {
+			if (b.isActive && player.invincibilityTimer <= 0) {
+				// プレイヤーと弾の距離を計算
+				float dx = b.pos.x - (player.pos.x + player.width / 2);
+				float dy = b.pos.y - (player.pos.y + player.height / 2);
+				float dist = sqrtf(dx * dx + dy * dy);
 
+				// 当たっていたら
+				if (dist < 15.0f) { // プレイヤーの半径+弾の半径
+					player.hp--;
+					player.invincibilityTimer = 60; // 60フレーム(1秒)無敵
+					b.isActive = false; // 弾を消す
+				}
+			}
+		}
+		// 無敵タイマーを減らす
+		if (player.invincibilityTimer > 0) player.invincibilityTimer--;
 
 
 		// Rifle weapon box
