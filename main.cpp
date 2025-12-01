@@ -51,6 +51,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		int objectWidth[15];
 		int objectHeight[15];
 
+		int worldWidth = kWindowWidth * 2;
+		int worldHeight = kWindowHeight * 2;
 	};
 
 	Vector2 world = { 0,0 };
@@ -274,6 +276,33 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			world.y = player.pos.y - (screenHeight - scrollMarginY);
 		}
 
+		// ワールド座標の制限
+		if (player.pos.x < -kWindowWidth) {
+			player.pos.x = -kWindowWidth;
+		}
+		if (player.pos.y < -kWindowHeight) {
+			player.pos.y = -kWindowHeight;
+		}
+		if (player.pos.x + player.width > map.worldWidth) {
+			player.pos.x = map.worldWidth - player.width;
+		}
+		if (player.pos.y + player.height > map.worldHeight) {
+			player.pos.y = map.worldHeight - player.height;
+		}
+
+		// カメラのワールド座標の制限
+		if (world.x < -kWindowWidth) {
+			world.x = -kWindowWidth;
+		}
+		if (world.y < -kWindowHeight) {
+			world.y = -kWindowHeight;
+		}
+		if (world.x > map.worldWidth - screenWidth) {
+			world.x = map.worldWidth - (float)screenWidth;
+		}
+		if (world.y > map.worldHeight - screenHeight) {
+			world.y = map.worldHeight - (float)screenHeight;
+		}
 
 		if (preKeys[DIK_J] == 0 && keys[DIK_J] != 0) {
 			int nextWeapon = currentWeapon;
@@ -754,6 +783,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::ScreenPrintf(0, 60, "Dash Duration: %d", player.dashDuration);
 		Novice::ScreenPrintf(0, 80, "Is Dashing: %d", player.isDashing ? 1 : 0);
 
+		
 
 		///
 		/// ↑描画処理ここまで
