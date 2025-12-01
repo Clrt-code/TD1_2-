@@ -10,7 +10,8 @@ const char kWindowTitle[] = "GC1C_10_ミャッ_フォン_マウン";
 
 const int kWindowWidth = 1280;
 const int kWindowHeight = 720;
-
+const int kStageWidth = 2048;
+const int kStageHeight = 1440;
 enum Direction {
 	UP,
 	DOWN,
@@ -267,6 +268,22 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			world.y = player.pos.y - (screenHeight - scrollMarginY);
 		}
 
+		// 左端・上端の制限（0より小さくならないようにする）
+		if (world.x < 0) {
+			world.x = 0;
+		}
+		if (world.y < 0) {
+			world.y = 0;
+		}
+
+		// 右端・下端の制限
+		// 「ステージの幅 - 画面の幅」より大きくならないようにする
+		if (world.x > kStageWidth - kWindowWidth) {
+			world.x = kStageWidth - kWindowWidth;
+		}
+		if (world.y > kStageHeight - kWindowHeight) {
+			world.y = kStageHeight - kWindowHeight;
+		}
 		/*if (keys[DIK_W]) player.pos.y -= player.speed;
 		if (keys[DIK_S]) player.pos.y += player.speed;
 		if (keys[DIK_A]) player.pos.x -= player.speed;
@@ -516,6 +533,19 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			if (keys[DIK_D]) player.pos.x += player.dashSpeed;
 		}
 
+		//プレイヤーがステージ外に出ないように制限
+		if (player.pos.x < 0) {
+			player.pos.x = 0;
+		}
+		if (player.pos.y < 0) {
+			player.pos.y = 0;
+		}
+		if (player.pos.x > kStageWidth - player.width) {
+			player.pos.x = kStageWidth - player.width;
+		}
+		if (player.pos.y > kStageHeight - player.height) {
+			player.pos.y = kStageHeight - player.height;
+		}
 		//Boss
 		if (boss.hp <= 70 && boss.phase == 1) {
 			boss.phase = 2;
