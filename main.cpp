@@ -76,7 +76,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	struct PlayerBullet {
 		Vector2 pos;
 		Vector2 velocity;
+		Vector2 startPos;
 		bool isActive;
+		float maxRange;
 	};
 
 	struct BossBullet {
@@ -94,8 +96,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 
 	// キー入力結果を受け取る箱
-	char keys[256] = {0};
-	char preKeys[256] = {0};
+	char keys[256] = { 0 };
+	char preKeys[256] = { 0 };
 
 	Map map = {};
 
@@ -145,6 +147,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	int pistolAmmo = 6;
 	int pistolMaxAmmo = 6;
+	float pistolRange = 600.0f;
+	float pistolBulletSpeed = 10.0f;
 	bool isReloading = false;
 	int reloadTime = 0;
 	const int reloadDuration = 90;
@@ -154,6 +158,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// riffle's bullets(automatic type)
 	int riffleAmmo = 30;
 	int riffleMaxAmmo = 30;
+	float rifleRange = 800.0f;
+	float rifleBulletSpeed = 15.0f;
 	int rifleFireRate = 5;     // shoot every 5 frames
 	int rifleFireTimer = 0;
 	const int riffleBulletsMax = 30;
@@ -162,8 +168,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// launcher's bullets (grenade type) - 未実装
 	int launcherAmmo = 5;
 	int launcherMaxAmmo = 5;
+	float launcherRange = 500.0f;
+	float launcherBulletSpeed = 8.0f;
 	bool isLauncherReloading = false;
-	int launcherReloadTime = 0; 
+	int launcherReloadTime = 0;
 	int launcherFireCooldown = 0;
 	const int launcherFireInterval = 48;
 	const int launcherReloadDuration = 120;
@@ -247,50 +255,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		}
 
-	////マップ当たり判定
-	//	if (player.pos.x < map.topLeft.x) {
-	//		player.pos.x = map.topLeft.x;
-	//	}
-	//	if (player.pos.x > map.topRight.x - player.width) {
-	//		player.pos.x = map.topRight.x - player.width;
-	//	}
-	//	if (player.pos.y < map.topLeft.y) {
-	//		player.pos.y = map.topLeft.y;
-	//	}
-	//	if (player.pos.y > map.bottomLeft.y - player.height) {
-	//		player.pos.y = map.bottomLeft.y - player.height;
-	//	}
-	//	//当たり判定のデバッグ
-	//	if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_RIGHT)) {
-	//		map.topLeft.x += 5;
-	//		map.bottomLeft.x += 5;
-	//	}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_LEFT)) {
-	//		map.topLeft.x -= 5;
-	//		map.bottomLeft.x -= 5;
-	//	}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_UP)) {
-	//		map.topLeft.y -= 5;
-	//		map.topRight.y -= 5;
-	//	}if (Novice::CheckHitKey(DIK_1) && Novice::CheckHitKey(DIK_DOWN)) {
-	//		map.topLeft.y += 5;
-	//		map.topRight.y += 5;
-	//	}
+		float mouseWorldX = mouseX + world.x;
+		float mouseWorldY = mouseY + world.y;
 
-	//	if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_RIGHT)) {
-	//		map.topRight.x += 5;
-	//		map.bottomRight.x += 5;
-	//	}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_LEFT)) {
-	//		map.topRight.x -= 5;
-	//		map.bottomRight.x -= 5;
-	//	}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_UP)) {
-	//		map.bottomLeft.y -= 5;
-	//		map.bottomRight.y -= 5;
-	//	}if (Novice::CheckHitKey(DIK_2) && Novice::CheckHitKey(DIK_DOWN)) {
-	//		map.bottomLeft.y += 5;
-	//		map.bottomRight.y += 5;
-	//	}
-
-
-		// 横スクロール
+			// 横スクロール
 		if (player.pos.x - world.x < scrollMarginX) {
 			world.x = player.pos.x - scrollMarginX;
 		}
@@ -305,11 +273,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		else if (player.pos.y - world.y > screenHeight - scrollMarginY) {
 			world.y = player.pos.y - (screenHeight - scrollMarginY);
 		}
-
-		/*if (keys[DIK_W]) player.pos.y -= player.speed;
-		if (keys[DIK_S]) player.pos.y += player.speed;
-		if (keys[DIK_A]) player.pos.x -= player.speed;
-		if (keys[DIK_D]) player.pos.x += player.speed;*/
 
 
 		if (preKeys[DIK_J] == 0 && keys[DIK_J] != 0) {
@@ -347,12 +310,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 								player.pos.x + player.width / 2,
 								player.pos.y + player.height / 2
 							};
+							pistolBullets[i].startPos = {
+								player.pos.x + player.width / 2,
+								player.pos.y + player.height / 2
+							};
+							pistolBullets[i].maxRange = pistolRange;
+
 							// プレイヤーからマウスへの方向ベクトルを正規化
-							float dx = mouseX - player.pos.x;
-							float dy = mouseY - player.pos.y;
+							float dx = mouseWorldX - player.pos.x;
+							float dy = mouseWorldY - player.pos.y;
 							float len = sqrtf(dx * dx + dy * dy);
 							if (len != 0) {
-								pistolBullets[i].velocity = { (dx / len) * 10.0f, (dy / len) * 10.0f };
+								pistolBullets[i].velocity = { (dx / len) * pistolBulletSpeed, (dy / len) * pistolBulletSpeed };
 							}
 
 							break;
@@ -378,8 +347,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 					pistolBullets[i].pos.x += pistolBullets[i].velocity.x;
 					pistolBullets[i].pos.y += pistolBullets[i].velocity.y;
 
-					if (pistolBullets[i].pos.x < 0 || pistolBullets[i].pos.x > kWindowWidth ||
-						pistolBullets[i].pos.y < 0 || pistolBullets[i].pos.y > kWindowHeight) {
+					float dx = pistolBullets[i].pos.x - pistolBullets[i].startPos.x;
+					float dy = pistolBullets[i].pos.y - pistolBullets[i].startPos.y;
+					float distance = sqrtf(dx * dx + dy * dy);
+
+					// 射程を超えたら消す
+					if (distance >= pistolBullets[i].maxRange) {
 						pistolBullets[i].isActive = false;
 					}
 				}
@@ -401,12 +374,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 								player.pos.x + player.width / 2,
 								player.pos.y + player.height / 2
 							};
+							riffleBullets[i].startPos = {
+								player.pos.x + player.width / 2,
+								player.pos.y + player.height / 2
+							};
+							riffleBullets[i].maxRange = rifleRange;
+
 							// プレイヤーからマウスへの方向ベクトルを正規化
-							float dx = mouseX - player.pos.x;
-							float dy = mouseY - player.pos.y;
+							float dx = mouseWorldX - player.pos.x;
+							float dy = mouseWorldY - player.pos.y;
 							float len = sqrtf(dx * dx + dy * dy);
 							if (len != 0) {
-								riffleBullets[i].velocity = { (dx / len) * 15.0f, (dy / len) * 15.0f };
+								riffleBullets[i].velocity = { (dx / len) * rifleBulletSpeed, (dy / len) * rifleBulletSpeed };
 							}
 							break;
 						}
@@ -429,10 +408,14 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				if (riffleBullets[i].isActive) {
 					riffleBullets[i].pos.x += riffleBullets[i].velocity.x;
 					riffleBullets[i].pos.y += riffleBullets[i].velocity.y;
-					if (riffleBullets[i].pos.x < 0 || riffleBullets[i].pos.x > kWindowWidth ||
-						riffleBullets[i].pos.y < 0 || riffleBullets[i].pos.y > kWindowHeight) {
+					
+					float dx = riffleBullets[i].pos.x - riffleBullets[i].startPos.x;
+					float dy = riffleBullets[i].pos.y - riffleBullets[i].startPos.y;
+					float distance = sqrtf(dx * dx + dy * dy);
+					// 射程を超えたら消す
+					if (distance >= riffleBullets[i].maxRange) {
 						riffleBullets[i].isActive = false;
-					}
+					}	
 				}
 			}
 		}
@@ -452,12 +435,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 								player.pos.x + player.width / 2,
 								player.pos.y + player.height / 2
 							};
+							launcherBullets[i].startPos = {
+								player.pos.x + player.width / 2,
+								player.pos.y + player.height / 2
+							};
+							launcherBullets[i].maxRange = launcherRange;
 							// プレイヤーからマウスへの方向ベクトルを正規化
-							float dx = mouseX - player.pos.x;
-							float dy = mouseY - player.pos.y;
+							float dx = mouseWorldX - player.pos.x;
+							float dy = mouseWorldY - player.pos.y;
 							float len = sqrtf(dx * dx + dy * dy);
 							if (len != 0) {
-								launcherBullets[i].velocity = { (dx / len) * 8.0f, (dy / len) * 8.0f };
+								launcherBullets[i].velocity = { (dx / len) * launcherBulletSpeed, (dy / len) * launcherBulletSpeed };
 							}
 							launcherFireCooldown = launcherFireInterval;
 							break;
@@ -481,15 +469,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				if (launcherBullets[i].isActive) {
 					launcherBullets[i].pos.x += launcherBullets[i].velocity.x;
 					launcherBullets[i].pos.y += launcherBullets[i].velocity.y;
-					if (launcherBullets[i].pos.x < 0 || launcherBullets[i].pos.x > kWindowWidth ||
-						launcherBullets[i].pos.y < 0 || launcherBullets[i].pos.y > kWindowHeight) {
+
+					float dx = launcherBullets[i].pos.x - launcherBullets[i].startPos.x;
+					float dy = launcherBullets[i].pos.y - launcherBullets[i].startPos.y;
+					float distance = sqrtf(dx * dx + dy * dy);
+					// 射程を超えたら消す
+					if (distance >= launcherBullets[i].maxRange) {
 						launcherBullets[i].isActive = false;
 					}
 				}
 			}
 		}
-
-
 
 
 		// Rifle weapon box
@@ -502,7 +492,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			rifleBoxPos.y = -100.0f;
 			rifleUnlocked = true;
 		}
-	
+
 		// Launcher weapon box
 		float dxL = player.pos.x - launcherBoxPos.x;
 		float dyL = player.pos.y - launcherBoxPos.y;
@@ -616,9 +606,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				float launcherDy = launcherBullets[i].pos.y - boss.pos.y;
 				float launcherDistance = sqrtf(launcherDx * launcherDx + launcherDy * launcherDy);
 
-				if (launcherDistance < 40.0f) { 
+				if (launcherDistance < 40.0f) {
 					launcherBullets[i].isActive = false;
-					boss.hp -= 20; 
+					boss.hp -= 20;
 					if (boss.hp < 0) boss.hp = 0;
 				}
 			}
@@ -674,27 +664,27 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		//aim line
 
-		Novice::DrawLine((int)player.pos.x -(int)world.x + (int)player.width / 2, (int)player.pos.y - (int)world.y + (int)player.height / 2, mouseX, mouseY, WHITE);
+		Novice::DrawLine((int)player.pos.x - (int)world.x + (int)player.width / 2, (int)player.pos.y - (int)world.y + (int)player.height / 2, mouseX, mouseY, WHITE);
 
-			////マップ範囲描画
-			//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, RED);
-			//Novice::DrawLine((int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
-			//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, RED);
-			//Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
+		////マップ範囲描画
+		//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, RED);
+		//Novice::DrawLine((int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
+		//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, RED);
+		//Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
 
-			//マップオブジェクト当たり判定のデバッグ
+		//マップオブジェクト当たり判定のデバッグ
 
-			for (int i = 0; i < 15; i++) {
-				Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, GREEN);
-				Novice::DrawLine((int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
-				Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, GREEN);
-				Novice::DrawLine((int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
-			}
+		for (int i = 0; i < 15; i++) {
+			Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, GREEN);
+			Novice::DrawLine((int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
+			Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, GREEN);
+			Novice::DrawLine((int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
+		}
 
 		//weapon box
 		Novice::DrawBox((int)rifleBoxPos.x - (int)world.x, (int)rifleBoxPos.y - (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
 		Novice::DrawBox((int)launcherBoxPos.x - (int)world.x, (int)launcherBoxPos.y - (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
-		
+
 
 		//武器を切り替え
 		if (currentWeapon == 0) {
@@ -753,7 +743,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::ScreenPrintf(0, 100, "Current Weapon: %s", weaponName);
 		Novice::ScreenPrintf(0, 180, "Rifle Unlocked: %d", rifleUnlocked);
 		Novice::ScreenPrintf(0, 220, "Launcher Unlocked: %d", launcherUnlocked);
-	
+
 		Novice::ScreenPrintf(0, 120, "pistolAmmo: %d / %d", pistolAmmo, pistolMaxAmmo);
 		Novice::ScreenPrintf(0, 160, "rifleAmmo: %d / %d", riffleAmmo, riffleMaxAmmo);
 		Novice::ScreenPrintf(0, 200, "launcherAmmo: %d / %d", launcherAmmo, launcherMaxAmmo);
@@ -763,7 +753,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::ScreenPrintf(0, 40, "Dash Cooldown: %d", player.dashCooldown);
 		Novice::ScreenPrintf(0, 60, "Dash Duration: %d", player.dashDuration);
 		Novice::ScreenPrintf(0, 80, "Is Dashing: %d", player.isDashing ? 1 : 0);
-		
+
 
 		///
 		/// ↑描画処理ここまで
