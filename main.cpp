@@ -1,6 +1,7 @@
 #include <Novice.h>
 #include <corecrt_math.h>
 #include <vector>
+#include <time.h> 
 #define _USE_MATH_DEFINES
 #ifdef USE_IMGUI
 #include"imgui.h"
@@ -10,6 +11,13 @@ const char kWindowTitle[] = "GC1C_10_ミャッ_フォン_マウン";
 
 const int kWindowWidth = 1280;
 const int kWindowHeight = 720;
+
+enum Scene {
+	TITLE,
+	GAMEPLAY,
+	GAMECLEAR,
+	GAMEOVER
+};
 
 enum Direction {
 	UP,
@@ -21,15 +29,6 @@ enum Direction {
 	DOWN_RIGHT,
 	DOWN_LEFT,
 };
-
-int mouseX = 0;
-int mouseY = 0;
-
-// Windowsアプリでのエントリーポイント(main関数)
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
-
-	// ライブラリの初期化
-	Novice::Initialize(kWindowTitle, kWindowWidth, kWindowHeight);
 
 	struct Vector2 {
 		float x;
@@ -73,7 +72,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		int dashCooldown;
 		int dashDuration;
 		int dashSpeed;
+		int hp;
 		bool isDashing;
+		int incvincibleTimer;
 	};
 	struct PlayerBullet {
 		Vector2 pos;
@@ -92,9 +93,21 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	struct Boss {
 		Vector2 pos;
 		int hp;
+		int radius;
 		int phase;
 		int attackTimer;
 	};
+
+int mouseX = 0;
+int mouseY = 0;
+
+int shakeTimer = 0;
+
+// Windowsアプリでのエントリーポイント(main関数)
+int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+
+	// ライブラリの初期化
+	Novice::Initialize(kWindowTitle, kWindowWidth, kWindowHeight);
 
 
 	// キー入力結果を受け取る箱
@@ -103,6 +116,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	Map map = {};
 
+	int boxW = 40;
+	int boxH = 40;
 	int sprite[10] = {
 
 		Novice::LoadTexture("./sprite/map_background.png"),
@@ -110,6 +125,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::LoadTexture("./sprite/itemTest.png"),
 
 	};
+
+	int PlayerGh = Novice::LoadTexture("./sprite/player.png");
+	int BossGh = Novice::LoadTexture("./sprite/boss.png");
 
 	map.objectTopLeft[0].x = 350;
 	map.objectTopLeft[0].y = 350;
@@ -129,20 +147,24 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	map.objectBottomRight[1].x = 940 + 81;
 	map.objectBottomRight[1].y = 940 + 128 * 1.5;
 
+
+
 	Player player = {
 		.pos = {64.0f, 640.0f},
 		.screenPos = {0,0},
-		.width = 20.0f,
-		.height = 20.0f,
+		.width = 32.0f,
+		.height = 32.0f,
 		.speed = 4.0f,
 		.dashCooldown = 0,
 		.dashDuration = 0,
 		.dashSpeed = 12,
-		.isDashing = false
+		.hp = 100,
+		.isDashing = false,
+		.incvincibleTimer = 0
 
 	};
 
-	Boss boss = { {600.0f, 300.0f}, 100, 1, 0 };
+	Boss boss = { {600.0f, 300.0f}, 100,50, 1, 0 };
 	std::vector<BossBullet> bossBullets;
 
 	// pistol's bullets(revolver type)
@@ -190,6 +212,11 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	bool rifleUnlocked = false;
 	bool launcherUnlocked = false;
 
+	shakeTimer = 0;
+
+
+	Scene currentScene = TITLE;
+
 
 	// ウィンドウの×ボタンが押されるまでループ
 	while (Novice::ProcessMessage() == 0) {
@@ -205,7 +232,28 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		///
 		/// ↓更新処理ここから
 		///
+		switch (currentScene)
+		{
+		case TITLE:
+			// タイトル画面の処理
+			if (keys[DIK_SPACE] && preKeys[DIK_SPACE] == 0) {
+				player.pos = { 64.0f, 640.0f };
+				player.hp = 100;
+				boss.pos = { 600.0f, 300.0f };
+				boss.hp = 100;
+				pistolAmmo = pistolMaxAmmo;
+				riffleAmmo = riffleMaxAmmo;
+				launcherAmmo = launcherMaxAmmo;
+				currentScene = GAMEPLAY;
+			}
 
+			// タイトル描画
+			Novice::ScreenPrintf(kWindowWidth / 2 - 50, kWindowHeight / 2 - 20, "SHOOTING GAME");
+			Novice::ScreenPrintf(kWindowWidth / 2 - 80, kWindowHeight / 2 + 20, "PRESS SPACE TO START");
+			break;
+
+		case GAMEPLAY:
+		{
 		if (keys[DIK_W]) {
 			player.pos.y -= player.speed;
 			for (int o = 0; o < 15; o++) {
@@ -597,6 +645,47 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 		}
 
+		//  Player当たり判定 
+		for (auto& b : bossBullets) {
+			if (b.isActive && player.invincibilityTimer <= 0) {
+				float dx = b.pos.x - (player.pos.x + player.width / 2);
+				float dy = b.pos.y - (player.pos.y + player.height / 2);
+				float dist = sqrtf(dx * dx + dy * dy);
+
+				if (dist < 15.0f) {
+					player.hp--;
+					player.invincibilityTimer = 60;
+					b.isActive = false;
+					shakeTimer = 15;
+				}
+			}
+		}
+		if (player.invincibilityTimer > 0) player.invincibilityTimer--;
+
+		Vector2 prePlayerPos = player.pos;
+		// player とボスの当たり判定 
+		float playerLeft = player.pos.x;
+		float playerRight = player.pos.x + player.width;
+		float playerTop = player.pos.y;
+		float playerBottom = player.pos.y + player.height;
+		float closestX = max(playerLeft, min(boss.pos.x, playerRight));
+		float closestY = max(playerTop, min(boss.pos.y, playerBottom)); 
+		float dx = boss.pos.x - closestX;
+		float dy = boss.pos.y - closestY;
+		float dist = sqrtf(dx * dx + dy * dy);
+		if (dist < boss.radius) {
+			player.hp -= 1;
+			float len = sqrtf(dx * dx + dy * dy);
+			if (len != 0) { dx /= len; dy /= len;
+			}
+			float overlap = boss.radius - dist;
+			player.pos.x -= dx * overlap;
+			player.pos.y -= dy * overlap;
+			float knockBackPower = 12.0f;
+			player.pos.x -= dx * knockBackPower;
+			player.pos.y -= dy * knockBackPower;
+		}
+
 		// pistolBulletとボスの当たり判定
 
 		for (int i = 0; i < pistolBulletsMax; i++) {
@@ -642,6 +731,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				}
 			}
 		}
+		}
 
 
 
@@ -681,6 +771,17 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			);
 		}
 
+
+		
+		Novice::DrawSprite(
+			(int)(player.pos.x - world.x),
+			(int)(player.pos.y - world.y),
+			PlayerGh,
+			player.width /16 ,
+			player.height / 16,
+			0.0f,
+			WHITE
+		);
 		Novice::DrawBox(
 			(int)(player.pos.x - world.x),
 			(int)(player.pos.y - world.y),
@@ -695,12 +796,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		Novice::DrawLine((int)player.pos.x - (int)world.x + (int)player.width / 2, (int)player.pos.y - (int)world.y + (int)player.height / 2, mouseX, mouseY, WHITE);
 
-		////マップ範囲描画
-		//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, RED);
-		//Novice::DrawLine((int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
-		//Novice::DrawLine((int)map.topLeft.x - (int)world.x, (int)map.topLeft.y - (int)world.y, (int)map.bottomLeft.x - (int)world.x, (int)map.bottomLeft.y - (int)world.y, RED);
-		//Novice::DrawLine((int)map.topRight.x - (int)world.x, (int)map.topRight.y - (int)world.y, (int)map.bottomRight.x - (int)world.x, (int)map.bottomRight.y - (int)world.y, RED);
-
 		//マップオブジェクト当たり判定のデバッグ
 
 		for (int i = 0; i < 15; i++) {
@@ -709,11 +804,26 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			Novice::DrawLine((int)map.objectTopLeft[i].x - (int)world.x, (int)map.objectTopLeft[i].y - (int)world.y, (int)map.objectBottomLeft[i].x - (int)world.x, (int)map.objectBottomLeft[i].y - (int)world.y, GREEN);
 			Novice::DrawLine((int)map.objectTopRight[i].x - (int)world.x, (int)map.objectTopRight[i].y - (int)world.y, (int)map.objectBottomRight[i].x - (int)world.x, (int)map.objectBottomRight[i].y - (int)world.y, GREEN);
 		}
-
-		//weapon box
-		Novice::DrawBox((int)rifleBoxPos.x - (int)world.x, (int)rifleBoxPos.y - (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
-		Novice::DrawBox((int)launcherBoxPos.x - (int)world.x, (int)launcherBoxPos.y - (int)world.y, 20, 20, 0.0f, WHITE, kFillModeSolid);
-
+		// Weapon Boxes
+					// ライフルボックス 
+		Novice::DrawQuad(
+			(int)(rifleBoxPos.x - world.x), (int)(rifleBoxPos.y - world.y),
+			(int)(rifleBoxPos.x - world.x) + boxW, (int)(rifleBoxPos.y - world.y),
+			(int)(rifleBoxPos.x - world.x), (int)(rifleBoxPos.y - world.y) + boxH,
+			(int)(rifleBoxPos.x - world.x) + boxW, (int)(rifleBoxPos.y - world.y) + boxH,
+			0, 0, 81, 128,
+			sprite[2],
+			WHITE
+		);
+		Novice::DrawQuad(
+			(int)(launcherBoxPos.x - world.x), (int)(launcherBoxPos.y - world.y),
+			(int)(launcherBoxPos.x - world.x) + boxW, (int)(launcherBoxPos.y - world.y),
+			(int)(launcherBoxPos.x - world.x), (int)(launcherBoxPos.y - world.y) + boxH,
+			(int)(launcherBoxPos.x - world.x) + boxW, (int)(launcherBoxPos.y - world.y) + boxH,
+			0, 0, 81, 128,
+			sprite[2],
+			WHITE
+		);
 
 		//武器を切り替え
 		if (currentWeapon == 0) {
@@ -745,11 +855,27 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 		Novice::DrawEllipse(mouseX, mouseY, 4, 4, 0.0f, RED, kFillModeSolid);
 
-		//boss
+		////boss
 		Novice::DrawEllipse((int)boss.pos.x - (int)world.x, (int)boss.pos.y - (int)world.y, 50, 50, 0.0f, RED, kFillModeSolid);
+		Novice::DrawSprite(
+			(int)(boss.pos.x - world.x) - boss.radius,
+			(int)(boss.pos.y - world.y) - boss.radius,
+			BossGh,
+			(boss.radius * 2.0f) / 64.0f,
+			(boss.radius * 2.0f) / 64.0f,
+			0.0f,
+			WHITE
+		);
+		for (auto& b : bossBullets) if (b.isActive) Novice::DrawEllipse((int)b.pos.x - (int)world.x, (int)b.pos.y - (int)world.y, 5, 5, 0.0f, RED, kFillModeSolid);
 
-		// HP表示
-		Novice::DrawBox(900, 50, boss.hp * 2, 20, 0.0f, GREEN, kFillModeSolid);
+
+		// UI
+		Novice::DrawBox(900, 50, boss.hp * 2, 20, 0.0f, GREEN, kFillModeSolid); // Boss HP
+		Novice::ScreenPrintf(900, 30, "BOSS HP");
+
+		Novice::DrawBox(50, 50, player.hp * 2, 20, 0.0f, BLUE, kFillModeSolid); // Player HP
+		Novice::ScreenPrintf(50, 30, "PLAYER HP: %d", player.hp);
+
 
 		for (auto& b : bossBullets) {
 			if (b.isActive) {
@@ -782,7 +908,32 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		Novice::ScreenPrintf(0, 40, "Dash Cooldown: %d", player.dashCooldown);
 		Novice::ScreenPrintf(0, 60, "Dash Duration: %d", player.dashDuration);
 		Novice::ScreenPrintf(0, 80, "Is Dashing: %d", player.isDashing ? 1 : 0);
+		if (player.hp <= 0) {
+			currentScene = GAMEOVER;
+		}
+		if (boss.hp <= 0) {
+			currentScene = GAMECLEAR;
+		}
 
+		break;
+
+		case GAMECLEAR:
+			Novice::ScreenPrintf(kWindowWidth / 2 - 50, kWindowHeight / 2 - 20, "GAME CLEAR!!");
+			Novice::ScreenPrintf(kWindowWidth / 2 - 80, kWindowHeight / 2 + 20, "PRESS SPACE TO TITLE");
+			if (keys[DIK_SPACE] && preKeys[DIK_SPACE] == 0) {
+				currentScene = TITLE;
+			}
+			break;
+
+		case GAMEOVER:
+			Novice::DrawBox(0, 0, kWindowWidth, kWindowHeight, 0.0f, 0x00000080, kFillModeSolid); // 半透明黒
+			Novice::ScreenPrintf(kWindowWidth / 2 - 50, kWindowHeight / 2 - 20, "GAME OVER...");
+			Novice::ScreenPrintf(kWindowWidth / 2 - 80, kWindowHeight / 2 + 20, "PRESS SPACE TO TITLE");
+			if (keys[DIK_SPACE] && preKeys[DIK_SPACE] == 0) {
+				currentScene = TITLE;
+			}
+			break;
+		}
 		
 
 		///
